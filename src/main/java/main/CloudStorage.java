@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.security.Security;
 
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class CloudStorage {
 
@@ -32,6 +35,8 @@ public class CloudStorage {
 	private CloudBlobContainer container;
 
 	public static void main(String[] args) {
+
+		Security.addProvider(new BouncyCastleProvider());
 
 		try {
 			new CloudStorage().processCommands();
@@ -81,6 +86,10 @@ public class CloudStorage {
 				// delete the specified file from the blob/container
 			} else if (command.startsWith("help")) {
 				System.out.println(HELP_TEXT);
+			} else if (command.startsWith("encrypt-test")) {
+				EncryptionModule enc = new EncryptionModule();
+				String cipherText = enc.encrypt();
+				enc.decrypt(cipherText);
 			} else {
 				System.out.println("Unsupported command!");
 			}
