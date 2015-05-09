@@ -19,6 +19,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class CloudStorage {
 
+	private static final String DECRYPT = "decrypt";
+
+	private static final String ENCRYPT = "encrypt";
+
 	public static final String CONNECTION = "DefaultEndpointsProtocol=http;"
 			+ "AccountName=ait1;"
 			+ "AccountKey=UzbdlqbrAIls5IJB1PpJLj1COmw28CP6Pcb7Wlm9JNY+Oo/fgWmwEBMKToX+85r5Rf6pBYKcf2TR9cf+nVieLw==";
@@ -33,6 +37,10 @@ public class CloudStorage {
 
 	private CloudStorageAccount storageAccount;
 	private CloudBlobContainer container;
+
+	private EncryptionModule encMod;
+
+	private BufferedReader in;
 
 	public static void main(String[] args) {
 
@@ -60,13 +68,15 @@ public class CloudStorage {
 
 		// Create the container if it does not exist.
 		container.createIfNotExists();
+
 	}
 
 	private void processCommands() throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		in = new BufferedReader(new InputStreamReader(System.in));
+		encMod = new EncryptionModule(in);
 
 		String command = in.readLine();
-		while (command != "exit") {
+		while (!command.equals("exit")) {
 			if (command.startsWith(ADD)) {
 				String args = command.substring(ADD.length() + 1);
 				String filePath = args.substring(0, args.indexOf(' '));
@@ -86,10 +96,18 @@ public class CloudStorage {
 				// delete the specified file from the blob/container
 			} else if (command.startsWith("help")) {
 				System.out.println(HELP_TEXT);
-			} else if (command.startsWith("encrypt-test")) {
-				EncryptionModule enc = new EncryptionModule();
-				String cipherText = enc.encrypt();
-				enc.decrypt(cipherText);
+			} else if (command.startsWith(ENCRYPT)) {
+				String args = command.substring(ENCRYPT.length() + 1);
+				String source = args.substring(0, args.indexOf(' '));
+				String destination = args.substring(args.indexOf(' ') + 1);
+				encMod.encrypt(source, destination);
+			} else if (command.startsWith(DECRYPT)) {
+				String args = command.substring(ENCRYPT.length() + 1);
+				String source = args.substring(0, args.indexOf(' '));
+				String destination = args.substring(args.indexOf(' ') + 1);
+				encMod.decrypt(source, destination);
+			} else if (command.startsWith("generate-key")) {
+				encMod.generateAndSaveKey();
 			} else {
 				System.out.println("Unsupported command!");
 			}

@@ -9,3 +9,5 @@ doc
 *.DS_Store
 *.swp
 *.out
+
+secret.key
