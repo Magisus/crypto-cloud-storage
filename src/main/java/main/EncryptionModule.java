@@ -144,12 +144,16 @@ public class EncryptionModule {
 
 	}
 
+	public String encrypt(String sourceFilePath) {
+		return encrypt(sourceFilePath, null);
+	}
+
 	public String encrypt(String sourceFilePath, String destinationFilePath) {
 
 		boolean successfulLoad = loadKey();
 
 		if (!successfulLoad) {
-			return "Key load failed";
+			return "Key load failed.";
 		}
 
 		String cipherText = "";
@@ -166,12 +170,18 @@ public class EncryptionModule {
 			cOut.write(Files.readAllBytes(path));
 			cOut.close();
 
+			cipherText = bOut.toString();
+
+			//If no output file is specified, use a temporary file to save data for upload.
+			if (destinationFilePath == null) {
+				destinationFilePath = CloudStorage.TEMP_FILE_PATH;
+			}
 			try (FileOutputStream out = new FileOutputStream(
 					destinationFilePath)) {
 				out.write(bOut.toByteArray());
 				bOut.close();
 			}
-			System.out.println("Ciphertext written to " + destinationFilePath);
+			System.out.println("Encryption successful.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -185,7 +195,7 @@ public class EncryptionModule {
 		if (!successfulLoad) {
 			System.out.println("Key load failed");
 		}
-		
+
 		try {
 			encrypt = Cipher.getInstance(CIPHER_INSTANCE, PROVIDER);
 
@@ -198,7 +208,6 @@ public class EncryptionModule {
 			cOut.write(Files.readAllBytes(path));
 			cOut.close();
 
-			System.out.println(bOut.toString());
 			try (OutputStream out = new BufferedOutputStream(
 					new FileOutputStream(destinationFilePath))) {
 				out.write(bOut.toByteArray());
