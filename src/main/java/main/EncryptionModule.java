@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,7 +34,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
+import org.bouncycastle.util.Arrays;
 import org.apache.commons.codec.binary.Base64;
 
 public class EncryptionModule {
@@ -48,8 +49,6 @@ public class EncryptionModule {
 	SecretKey key;
 	KeyGenerator keyGen;
 	Cipher encrypt;
-
-	byte[] iv = "1234567812345678".getBytes();
 
 	private BufferedReader input;
 
@@ -162,6 +161,10 @@ public class EncryptionModule {
 
 		try {
 			encrypt = Cipher.getInstance(CIPHER_INSTANCE, PROVIDER);
+			
+			SecureRandom random = new SecureRandom();
+			byte[] iv = ByteBuffer.allocate(16).putLong(random.nextLong()).array();
+			System.out.println("IV length: " + iv.length);
 
 			encrypt.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
 
@@ -180,7 +183,8 @@ public class EncryptionModule {
 			}
 			try (FileOutputStream out = new FileOutputStream(
 					destinationFilePath)) {
-				out.write(Base64.encodeBase64(bOut.toByteArray()));
+				byte[] output = Arrays.concatenate(iv, bOut.toByteArray());
+				out.write(Base64.encodeBase64(output));
 				bOut.close();
 			}
 			System.out.println("Encryption successful.");
@@ -201,13 +205,22 @@ public class EncryptionModule {
 		try {
 			encrypt = Cipher.getInstance(CIPHER_INSTANCE, PROVIDER);
 
-			encrypt.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
 
 			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-			CipherOutputStream cOut = new CipherOutputStream(bOut, encrypt);
 
 			Path path = Paths.get(sourceFilePath);
-			cOut.write(Base64.decodeBase64(Files.readAllBytes(path)));
+			byte[] fileContent = Base64.decodeBase64(Files.readAllBytes(path));
+			byte[] iv = new byte[16];
+			for(int i = 0; i < 16; i++){
+				iv[i] = fileContent[i];
+			}
+			byte[] cipherText = new byte[fileContent.length - 16];
+			for(int i = 16; i < fileContent.length; i ++){
+				cipherText[i - 16] = fileContent[i];
+			}
+			encrypt.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
+			CipherOutputStream cOut = new CipherOutputStream(bOut, encrypt);
+			cOut.write(cipherText);
 			cOut.close();
 
 			try (OutputStream out = new BufferedOutputStream(
