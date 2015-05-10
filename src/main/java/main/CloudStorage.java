@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.security.Security;
+import java.util.List;
 
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageException;
@@ -101,7 +102,7 @@ public class CloudStorage {
 							.getBlockBlobReference(destName);
 					encMod.encrypt(sourceFilePath);
 					blob.upload(new FileInputStream(TEMP_FILE_PATH), new File(
-							sourceFilePath).length());
+							TEMP_FILE_PATH).length());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -109,7 +110,8 @@ public class CloudStorage {
 			} else if (command.startsWith(DOWNLOAD)) {
 				String args = command.substring(DOWNLOAD.length() + 1);
 				String itemName = args.substring(0, args.indexOf(' '));
-				String destinationFilePath = args.substring(args.indexOf(' ') + 1);
+				String destinationFilePath = args
+						.substring(args.indexOf(' ') + 1);
 				try {
 					CloudBlob blob = container.getBlockBlobReference(itemName);
 					blob.download(new FileOutputStream(TEMP_FILE_PATH));
@@ -124,6 +126,13 @@ public class CloudStorage {
 				}
 			} else if (command.startsWith(REMOVE)) {
 				// delete the specified file from the blob/container
+				String itemName = command.substring(REMOVE.length() + 1);
+				try {
+					CloudBlob blob = container.getBlockBlobReference(itemName);
+					blob.delete();
+				} catch (URISyntaxException | StorageException e) {
+					e.printStackTrace();
+				}
 			} else if (command.startsWith(HELP)) {
 				System.out.println(HELP_TEXT);
 			} else if (command.startsWith(ENCRYPT)) {

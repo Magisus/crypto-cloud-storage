@@ -34,6 +34,8 @@ import javax.crypto.spec.IvParameterSpec;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import org.apache.commons.codec.binary.Base64;
+
 public class EncryptionModule {
 
 	private static final String PROVIDER = "BC";
@@ -178,7 +180,7 @@ public class EncryptionModule {
 			}
 			try (FileOutputStream out = new FileOutputStream(
 					destinationFilePath)) {
-				out.write(bOut.toByteArray());
+				out.write(Base64.encodeBase64(bOut.toByteArray()));
 				bOut.close();
 			}
 			System.out.println("Encryption successful.");
@@ -205,7 +207,7 @@ public class EncryptionModule {
 			CipherOutputStream cOut = new CipherOutputStream(bOut, encrypt);
 
 			Path path = Paths.get(sourceFilePath);
-			cOut.write(Files.readAllBytes(path));
+			cOut.write(Base64.decodeBase64(Files.readAllBytes(path)));
 			cOut.close();
 
 			try (OutputStream out = new BufferedOutputStream(
@@ -213,6 +215,7 @@ public class EncryptionModule {
 				out.write(bOut.toByteArray());
 				bOut.close();
 			}
+			System.out.println("Decryption successful.");
 
 		} catch (Exception e) {
 			e.printStackTrace();
